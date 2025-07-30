@@ -40,18 +40,31 @@ FlutterIpcPlugin::~FlutterIpcPlugin() {}
 void FlutterIpcPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-  if (method_call.method_name().compare("getPlatformVersion") == 0) {
-    std::ostringstream version_stream;
-    version_stream << "Windows ";
-    if (IsWindows10OrGreater()) {
-      version_stream << "10+";
-    } else if (IsWindows8OrGreater()) {
-      version_stream << "8";
-    } else if (IsWindows7OrGreater()) {
-      version_stream << "7";
-    }
-    result->Success(flutter::EncodableValue(version_stream.str()));
-  } else {
+  
+  const std::string& method = method_call.method_name();
+  
+  if (method == "createServer") {
+    result->Error("NOT_IMPLEMENTED", "createServer not implemented yet");
+  } 
+  else if (method == "connect") {
+    result->Error("NOT_IMPLEMENTED", "connect not implemented yet");
+  }
+  else if (method == "listen") {
+    result->Error("NOT_IMPLEMENTED", "listen not implemented yet");
+  }
+  else if (method == "sendMessageFromServer") {
+    result->Error("NOT_IMPLEMENTED", "sendMessageFromServer not implemented yet");
+  }
+  else if (method == "sendMessageFromClient") {
+    result->Error("NOT_IMPLEMENTED", "sendMessageFromClient not implemented yet");
+  }
+  else if (method == "closeServer") {
+    result->Error("NOT_IMPLEMENTED", "closeServer not implemented yet");
+  }
+  else if (method == "disconnect") {
+    result->Error("NOT_IMPLEMENTED", "disconnect not implemented yet");
+  }
+  else {
     result->NotImplemented();
   }
 }

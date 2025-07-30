@@ -23,7 +23,39 @@ abstract class FlutterIpcPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  Future<String> createServer(String pipeName) {
+    throw UnimplementedError('createServer() has not been implemented.');
+  }
+
+  Future<String> connect(String pipeName) {
+    throw UnimplementedError('connect() has not been implemented.');
+  }
+
+  Future<void> listen(String serverId) {
+    throw UnimplementedError('listen() has not been implemented.');
+  }
+
+  Future<void> sendMessageFromServer(String serverId, String message) {
+    throw UnimplementedError('sendMessageFromServer() has not been implemented.');
+  }
+
+  Future<void> sendMessageFromClient(String clientId, String message) {
+    throw UnimplementedError('sendMessageFromClient() has not been implemented.');
+  }
+
+  Stream<String> getServerMessageStream(String serverId) {
+    throw UnimplementedError('getServerMessageStream() has not been implemented.');
+  }
+
+  Stream<String> getClientMessageStream(String clientId) {
+    throw UnimplementedError('getClientMessageStream() has not been implemented.');
+  }
+
+  Future<void> closeServer(String serverId) {
+    throw UnimplementedError('closeServer() has not been implemented.');
+  }
+
+  Future<void> disconnect(String clientId) {
+    throw UnimplementedError('disconnect() has not been implemented.');
   }
 }
