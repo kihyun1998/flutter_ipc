@@ -5,8 +5,30 @@
 #include <flutter/plugin_registrar_windows.h>
 
 #include <memory>
+#include <string>
+#include <map>
+#include <windows.h>
 
 namespace flutter_ipc {
+
+class NamedPipeServer {
+ public:
+  NamedPipeServer(const std::string& pipe_name);
+  ~NamedPipeServer();
+
+  bool Create();
+  bool WaitForConnection();
+  void Close();
+  
+  bool IsValid() const { return pipe_handle_ != INVALID_HANDLE_VALUE; }
+  const std::string& GetPipeName() const { return pipe_name_; }
+
+ private:
+  std::string pipe_name_;
+  HANDLE pipe_handle_;
+  OVERLAPPED overlap_;
+  bool is_connected_;
+};
 
 class FlutterIpcPlugin : public flutter::Plugin {
  public:
@@ -24,6 +46,10 @@ class FlutterIpcPlugin : public flutter::Plugin {
   void HandleMethodCall(
       const flutter::MethodCall<flutter::EncodableValue> &method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+
+ private:
+  std::map<std::string, std::unique_ptr<NamedPipeServer>> servers_;
+  std::string GenerateServerId();
 };
 
 }  // namespace flutter_ipc
