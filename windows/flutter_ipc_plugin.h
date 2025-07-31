@@ -30,6 +30,24 @@ class NamedPipeServer {
   bool is_connected_;
 };
 
+class NamedPipeClient {
+ public:
+  NamedPipeClient(const std::string& pipe_name);
+  ~NamedPipeClient();
+
+  bool Connect();
+  void Disconnect();
+  
+  bool IsValid() const { return pipe_handle_ != INVALID_HANDLE_VALUE; }
+  bool IsConnected() const { return is_connected_; }
+  const std::string& GetPipeName() const { return pipe_name_; }
+
+ private:
+  std::string pipe_name_;
+  HANDLE pipe_handle_;
+  bool is_connected_;
+};
+
 class FlutterIpcPlugin : public flutter::Plugin {
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
@@ -49,7 +67,9 @@ class FlutterIpcPlugin : public flutter::Plugin {
 
  private:
   std::map<std::string, std::unique_ptr<NamedPipeServer>> servers_;
+  std::map<std::string, std::unique_ptr<NamedPipeClient>> clients_;
   std::string GenerateServerId();
+  std::string GenerateClientId();
 };
 
 }  // namespace flutter_ipc

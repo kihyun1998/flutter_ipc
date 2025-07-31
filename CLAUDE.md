@@ -10,57 +10,79 @@ This is a Flutter plugin project called `flutter_ipc` that implements Inter-Proc
 
 ## Development Commands
 
-### Flutter Commands
+### Essential Commands
 ```bash
 # Get dependencies
 flutter pub get
 
-# Run the example app
-cd example && flutter run
+# Run the example app (Windows only currently)
+cd example && flutter run -d windows
 
 # Run tests
 flutter test
 
-# Analyze code
+# Analyze code and check linting
 flutter analyze
-
-# Check for linting issues
 dart analyze
+
+# Build for specific platforms
+flutter build windows
+flutter build macos
 ```
 
-### Platform-Specific Building
+### Testing Commands
 ```bash
-# Build for Windows
-flutter build windows
+# Run unit tests for Dart layer
+flutter test
 
-# Build for macOS  
-flutter build macos
-
-# Test integration tests
+# Run integration tests (when available)
 cd example && flutter test integration_test/
+
+# Test single file
+flutter test test/flutter_ipc_test.dart
 ```
 
 ## Architecture Overview
 
-### Plugin Structure
-The project follows Flutter's federated plugin architecture:
+### Current Implementation Status
+The project is in **Phase 2** development - Windows Named Pipe server implementation is partially complete. The basic plugin structure exists with:
 
-- **`lib/flutter_ipc.dart`** - Main public API that developers will use
-- **`lib/flutter_ipc_platform_interface.dart`** - Abstract platform interface defining the contract
-- **`lib/flutter_ipc_method_channel.dart`** - Method channel implementation for platform communication
+- ✅ **Phase 1**: Flutter plugin structure and Method Channel setup
+- 🚧 **Phase 2**: Windows Named Pipe server (partial - NamedPipeServer class exists but methods not fully implemented)
+- ⏳ **Phase 3+**: Client implementation, message passing, error handling pending
 
-### Platform Implementations
-- **Windows**: `windows/flutter_ipc_plugin.cpp` - C++ implementation using Windows Named Pipes
-- **macOS**: `macos/Classes/FlutterIpcPlugin.swift` - Swift implementation using XPC
+### Plugin Architecture
+Uses Flutter's federated plugin architecture with three main layers:
 
-### Planned API Design (from requirements)
+- **`lib/flutter_ipc.dart`** - Public API with IpcServer and IpcClient classes
+- **`lib/flutter_ipc_platform_interface.dart`** - Abstract platform interface 
+- **`lib/flutter_ipc_method_channel.dart`** - Method channel bridge to native code
+
+### Native Implementation Structure
+
+#### Windows (C++)
+- **Location**: `windows/flutter_ipc_plugin.cpp` and `windows/flutter_ipc_plugin.h`
+- **Key Classes**:
+  - `NamedPipeServer` - Handles Named Pipe creation and connection management
+  - `FlutterIpcPlugin` - Main plugin class handling method calls from Dart
+- **Current State**: Basic NamedPipeServer structure exists, but method handlers return "NOT_IMPLEMENTED" errors
+- **Named Pipe Path**: Uses `\\\\.\\pipe\\{pipeName}` format
+
+#### macOS (Swift)
+- **Location**: `macos/Classes/FlutterIpcPlugin.swift`
+- **Status**: Contains only boilerplate code, XPC implementation pending
+
+### API Design (Already Implemented)
+The Dart API follows the planned design from requirements:
+
 ```dart
-// Server/Client API structure
+// Main entry points
 class FlutterIpc {
   static Future<IpcServer> createServer(String pipeName);
   static Future<IpcClient> connect(String pipeName);
 }
 
+// Server instance (uses internal _serverId for tracking)
 class IpcServer {
   Future<void> listen();
   Future<void> sendMessage(String message);
@@ -68,6 +90,7 @@ class IpcServer {
   Future<void> close();
 }
 
+// Client instance (uses internal _clientId for tracking)  
 class IpcClient {
   Future<void> sendMessage(String message);
   Stream<String> get messageStream;
@@ -75,51 +98,41 @@ class IpcClient {
 }
 ```
 
-## Implementation Phases
+## Implementation Phases (from plan.md)
 
-The project follows a phased implementation approach defined in `plan.md`:
+**Current Status**: Phase 2 in progress
 
-1. **Phase 1**: Basic plugin structure and Method Channel setup (✅ Complete)
-2. **Phase 2**: Windows Named Pipe server implementation 
-3. **Phase 3**: Windows Named Pipe client implementation
-4. **Phase 4**: Message sending/receiving functionality
-5. **Phase 5**: Example app and testing
-6. **Phase 6**: Error handling and stability
-7. **Phase 7**: Documentation and deployment
+1. **Phase 1**: Basic plugin structure ✅
+2. **Phase 2**: Windows Named Pipe server 🚧 (NamedPipeServer class exists)
+3. **Phase 3**: Windows Named Pipe client ⏳
+4. **Phase 4**: Message sending/receiving ⏳
+5. **Phase 5**: Example app and testing ⏳
+6. **Phase 6**: Error handling and stability ⏳
+7. **Phase 7**: Documentation and deployment ⏳
 
-## Key Files and Their Purpose
+## Key Development Context
 
-- **`requirement.md`** - Korean language specification detailing all requirements and features
-- **`plan.md`** - Detailed implementation plan with time estimates for each phase
-- **`example/`** - Example Flutter app demonstrating plugin usage
-- **`test/`** - Unit tests for the Dart layer
-- **`integration_test/`** - Platform integration tests
+### Current Development State
+- **Windows plugin structure**: Complete but methods return "NOT_IMPLEMENTED"
+- **Example app**: Complete UI with test buttons for server/client operations
+- **Native pipe creation**: NamedPipeServer.Create() method exists and handles `CreateNamedPipeA` API
+- **Connection handling**: NamedPipeServer.WaitForConnection() partially implemented with overlapped I/O structure
 
-## Native Code Integration
+### Next Implementation Steps
+1. Complete Windows C++ method handlers in HandleMethodCall()
+2. Implement server-client ID tracking system  
+3. Add Event Channel for message streams
+4. Implement ReadFile/WriteFile for message passing
 
-### Windows (C++)
-- Uses Windows Named Pipes API (`CreateNamedPipe`, `ConnectNamedPipe`, `ReadFile`, `WriteFile`)
-- Located in `windows/flutter_ipc_plugin.cpp`
-- Handles both server and client modes
+### Critical Files for Development
+- **`requirement.md`** - Korean specification with detailed API requirements
+- **`plan.md`** - 8-hour phased implementation timeline
+- **`example/lib/main.dart`** - Complete test UI ready for functionality
+- **`windows/flutter_ipc_plugin.cpp`** - Core C++ implementation (methods need completion)
 
-### macOS (Swift)  
-- Will use XPC for cross-process communication
-- Located in `macos/Classes/FlutterIpcPlugin.swift`
-- Currently contains only boilerplate code
-
-## Target Features
-
-- Bidirectional message communication between processes
-- Support for both server and client modes in the same app
-- String and binary data transmission
-- Multi-client server support
-- Error handling and connection state management
-- Cross-platform abstraction (Windows and macOS)
-
-## Development Notes
-
-- This is currently in early development - only basic plugin structure exists
-- The plugin uses `plugin_platform_interface` for platform abstraction
-- Method channels are used for Dart ↔ Native communication
-- Event channels will be needed for stream-based message receiving
-- Focus is on defensive IPC implementation, not network communication
+### Development Notes
+- Plugin uses `plugin_platform_interface` pattern for cross-platform abstraction
+- Internal ID system (_serverId, _clientId) tracks multiple server/client instances
+- Event channels will be required for Stream<String> messageStream implementation
+- Focus on local machine IPC only - no network communication
+- Current Flutter version: 3.32.7, Dart 3.8.1
