@@ -136,3 +136,8 @@ class IpcClient {
 - Event channels will be required for Stream<String> messageStream implementation
 - Focus on local machine IPC only - no network communication
 - Current Flutter version: 3.32.7, Dart 3.8.1
+
+### Development Guidelines
+- **Comments**: Always write comments in English to avoid encoding issues with MSVC compiler
+- **Encoding**: Use UTF-8 encoding for all source files but avoid non-ASCII characters in comments
+- **Platform compatibility**: Consider Windows CP949 encoding limitations when writing C++ code

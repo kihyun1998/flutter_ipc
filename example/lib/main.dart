@@ -18,6 +18,8 @@ class _MyAppState extends State<MyApp> {
   String _status = 'Ready to test IPC';
   IpcServer? _server;
   IpcClient? _client;
+  bool _serverCreated = false;
+  bool _isListening = false;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class _MyAppState extends State<MyApp> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _createServer,
+                onPressed: !_serverCreated ? _createServer : null,
                 child: const Text('Create Server'),
               ),
               const SizedBox(height: 10),
@@ -48,13 +50,18 @@ class _MyAppState extends State<MyApp> {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: _server != null ? _startListening : null,
+                onPressed: _startListening,
                 child: const Text('Start Server Listening'),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: _client != null ? _sendMessage : null,
+                onPressed: _sendMessage,
                 child: const Text('Send Message from Client'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _client != null ? _disconnectClient : null,
+                child: const Text('Disconnect Client'),
               ),
               const SizedBox(height: 10),
               ElevatedButton(onPressed: _cleanup, child: const Text('Cleanup')),
@@ -70,10 +77,12 @@ class _MyAppState extends State<MyApp> {
       _server = await FlutterIpc.createServer('test_pipe');
       setState(() {
         _status = 'Server created successfully';
+        _serverCreated = true;
       });
     } catch (e) {
       setState(() {
         _status = 'Server creation failed: $e';
+        _serverCreated = false;
       });
     }
   }
@@ -96,16 +105,25 @@ class _MyAppState extends State<MyApp> {
       await _server!.listen();
       setState(() {
         _status = 'Server is listening';
+        _isListening = true;
       });
     } catch (e) {
       setState(() {
         _status = 'Server listen failed: $e';
+        _isListening = false;
       });
     }
   }
 
   Future<void> _sendMessage() async {
     try {
+      if (_client == null) {
+        setState(() {
+          _status = 'No client connected - please connect client first';
+        });
+        return;
+      }
+      
       await _client!.sendMessage('Hello from client!');
       setState(() {
         _status = 'Message sent from client';
@@ -113,6 +131,22 @@ class _MyAppState extends State<MyApp> {
     } catch (e) {
       setState(() {
         _status = 'Send message failed: $e';
+      });
+    }
+  }
+
+  Future<void> _disconnectClient() async {
+    try {
+      if (_client != null) {
+        await _client!.disconnect();
+        _client = null;
+      }
+      setState(() {
+        _status = 'Client disconnected successfully';
+      });
+    } catch (e) {
+      setState(() {
+        _status = 'Client disconnect failed: $e';
       });
     }
   }
@@ -129,6 +163,8 @@ class _MyAppState extends State<MyApp> {
       }
       setState(() {
         _status = 'Cleaned up successfully';
+        _serverCreated = false;
+        _isListening = false;
       });
     } catch (e) {
       setState(() {

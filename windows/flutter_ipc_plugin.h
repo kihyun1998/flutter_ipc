@@ -11,6 +11,13 @@
 
 namespace flutter_ipc {
 
+enum class ServerState {
+  CREATED,    // Server created but not listening yet
+  LISTENING,  // Waiting for client connections
+  CONNECTED,  // Client connected
+  CLOSED      // Server closed
+};
+
 class NamedPipeServer {
  public:
   NamedPipeServer(const std::string& pipe_name);
@@ -18,9 +25,14 @@ class NamedPipeServer {
 
   bool Create();
   bool WaitForConnection();
+  bool SendMessage(const std::string& message);
+  bool ResetForNewConnection();
   void Close();
   
   bool IsValid() const { return pipe_handle_ != INVALID_HANDLE_VALUE; }
+  bool IsListening() const { return state_ == ServerState::LISTENING || state_ == ServerState::CONNECTED; }
+  bool IsConnected() const { return is_connected_; }
+  ServerState GetState() const { return state_; }
   const std::string& GetPipeName() const { return pipe_name_; }
 
  private:
@@ -28,6 +40,7 @@ class NamedPipeServer {
   HANDLE pipe_handle_;
   OVERLAPPED overlap_;
   bool is_connected_;
+  ServerState state_;
 };
 
 class NamedPipeClient {
@@ -36,6 +49,7 @@ class NamedPipeClient {
   ~NamedPipeClient();
 
   bool Connect();
+  bool SendMessage(const std::string& message);
   void Disconnect();
   
   bool IsValid() const { return pipe_handle_ != INVALID_HANDLE_VALUE; }
